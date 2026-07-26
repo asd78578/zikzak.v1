@@ -8,28 +8,28 @@ import com.example.zikzak.dto.UserResponse;
 import com.example.zikzak.exception.UserNotFoundException;
 import com.example.zikzak.user.User;
 import com.example.zikzak.user.UserRepository;
-import io.jsonwebtoken.Jwts;
+//import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Service;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+//import io.jsonwebtoken.io.Decoders;
+//import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 
-import java.util.Date;
+//import java.util.Date;
 import java.util.List;
 
 @Service
 public class UserService {
 
-    private final JwtService jwtService;
+//    private final JwtService jwtService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    private final String SECRET = "my-secret-key-my-secret-key-my-secret-key";
+//    private final String SECRET = "my-secret-key-my-secret-key-my-secret-key";
 
 
-    public UserService(JwtService jwtService, UserRepository userRepository
+    public UserService(UserRepository userRepository
             , UserMapper userMapper) {
-        this.jwtService = jwtService;
+
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
@@ -69,7 +69,7 @@ public class UserService {
         User user = new User();
         user.setUsername(request.username());
 
-        // пока без bcrypt (добавим позже)
+        // Временно сохраняется без BCrypt. Шифрование добавим позже.
         user.setPassword(request.password());
 
         return userMapper.toResponse(userRepository.save(user));
@@ -86,28 +86,28 @@ public class UserService {
         return user;
     }
 
-    public String login(LoginRequest request) {
-
-        User user = userRepository.findByUsername(request.username())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!user.getPassword().equals(request.password())) {
-            throw new RuntimeException("Wrong password");
-        }
-
-        return jwtService.generateToken(user);
-    }
-
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
-    }
-
-    public String generateToken(User user) {
-        return Jwts.builder()
-                .setSubject(user.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(getSigningKey())
-                .compact();
-    }
+//    public String login(LoginRequest request) {
+//
+//        User user = userRepository.findByUsername(request.username())
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        if (!user.getPassword().equals(request.password())) {
+//            throw new RuntimeException("Wrong password");
+//        }
+//
+//        return jwtService.generateToken(user);
+//    }
+//
+//    private Key getSigningKey() {
+//        return Keys.hmacShaKeyFor(SECRET.getBytes());
+//    }
+//
+//    public String generateToken(User user) {
+//        return Jwts.builder()
+//                .setSubject(user.getUsername())
+//                .setIssuedAt(new Date())
+//                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
+//                .signWith(getSigningKey())
+//                .compact();
+//    }
 }

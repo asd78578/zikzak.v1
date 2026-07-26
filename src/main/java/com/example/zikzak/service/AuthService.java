@@ -1,4 +1,4 @@
-package com.example.zikzak.controller;
+package com.example.zikzak.service;
 
 import com.example.zikzak.dto.LoginRequest;
 import com.example.zikzak.service.JwtService;

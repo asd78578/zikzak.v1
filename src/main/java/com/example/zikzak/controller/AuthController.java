@@ -3,6 +3,7 @@ package com.example.zikzak.controller;
 import com.example.zikzak.dto.LoginRequest;
 import com.example.zikzak.dto.RegisterRequest;
 import com.example.zikzak.dto.UserResponse;
+import com.example.zikzak.service.AuthService;
 import com.example.zikzak.service.UserService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,9 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserService userService;
+    private final AuthService authService;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, AuthService authService) {
         this.userService = userService;
+        this.authService = authService;
     }
 
     @PostMapping("/register")
@@ -26,7 +29,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
-        return userService.login(request);
+        return authService.login(request);
     }
 
 }

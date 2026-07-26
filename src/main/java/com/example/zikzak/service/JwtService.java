@@ -10,16 +10,14 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-
-
-    private final String secret = "my-secret-key-my-secret-key";
+    private final String SECRET = "my-secret-key-my-secret-key";
 
     public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
                 .compact();
     }
 }
