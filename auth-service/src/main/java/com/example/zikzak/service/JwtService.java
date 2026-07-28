@@ -3,21 +3,41 @@ package com.example.zikzak.service;
 import com.example.zikzak.user.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
-    private final String SECRET = "my-secret-key-my-secret-key";
+    private final String secret;
+    private final long expirationMs;
+
+    public JwtService(
+            @Value("${security.jwt.secret}") String secret,
+            @Value("${security.jwt.expiration-ms}") long expirationMs
+    ) {
+        this.secret = secret;
+        this.expirationMs = expirationMs;
+    }
 
     public String generateToken(User user) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + expirationMs);
+
         return Jwts.builder()
-                .setSubject(user.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                .subject(user.getUsername())
+                .claim("role", user.getRole().name())
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(
+                        Keys.hmacShaKeyFor(
+                                secret.getBytes(StandardCharsets.UTF_8)
+                        )
+                )
                 .compact();
     }
 }
+//$env:JWT_SECRET="длинный-случайный-секретный-ключ"

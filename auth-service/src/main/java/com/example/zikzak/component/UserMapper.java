@@ -1,6 +1,5 @@
 package com.example.zikzak.component;
 
-import com.example.zikzak.dto.UserRequest;
 import com.example.zikzak.dto.UserResponse;
 import com.example.zikzak.user.User;
 import org.springframework.stereotype.Component;
@@ -15,9 +14,4 @@ public class UserMapper {
         );
     }
 
-    public User toEntity(UserRequest request) {
-        User user = new User();
-        user.setUsername(request.username());
-        return user;
-    }
 }

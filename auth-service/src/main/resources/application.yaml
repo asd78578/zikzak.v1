@@ -18,3 +18,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:zikzak-development-secret-key-2026-1234567890}
+    expiration-ms: 3600000
