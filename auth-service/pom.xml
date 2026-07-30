@@ -71,6 +71,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- DATABASE MIGRATIONS -->
+		<dependency>
+			<groupId>org.liquibase</groupId>
+			<artifactId>liquibase-core</artifactId>
+		</dependency>
+
 		<!-- DEVTOOLS -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

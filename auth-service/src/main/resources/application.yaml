@@ -11,10 +11,14 @@ spring:
     password: ${AUTH_DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
+
   jpa:
     hibernate:
-      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
-    show-sql: ${SHOW_SQL:true}
+      ddl-auto: validate
+    show-sql: true
     properties:
       hibernate:
         format_sql: true

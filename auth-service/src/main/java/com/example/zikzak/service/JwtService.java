@@ -1,6 +1,6 @@
 package com.example.zikzak.service;
 
-import com.example.zikzak.user.User;
+import com.example.zikzak.user.Account;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,13 +23,13 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(User user) {
+    public String generateToken(Account account) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
-                .subject(user.getUsername())
-                .claim("role", user.getRole().name())
+                .subject(account.getEmail())
+                .claim("role", account.getRole().name())
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(
@@ -40,4 +40,3 @@ public class JwtService {
                 .compact();
     }
 }
-//$env:JWT_SECRET="длинный-случайный-секретный-ключ"
