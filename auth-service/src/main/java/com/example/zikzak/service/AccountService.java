@@ -11,6 +11,7 @@ import com.example.zikzak.user.AccountRepository;
 import com.example.zikzak.user.Role;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
 
@@ -31,6 +32,7 @@ public class AccountService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     public AccountResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.email());
 
@@ -50,6 +52,7 @@ public class AccountService {
         return accountMapper.toResponse(savedAccount);
     }
 
+    @Transactional(readOnly = true)
     public Account loginCheck(LoginRequest request) {
         String email = normalizeEmail(request.email());
 
