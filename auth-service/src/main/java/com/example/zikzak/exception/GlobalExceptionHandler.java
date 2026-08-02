@@ -1,10 +1,13 @@
 package com.example.zikzak.exception;
 
 import com.example.zikzak.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.OffsetDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -12,21 +15,41 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(
-            EmailAlreadyExistsException ex
+            EmailAlreadyExistsException exception,
+            HttpServletRequest request
     ) {
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        ErrorResponse response = new ErrorResponse(
+                OffsetDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse(ex.getMessage(), 409));
+                .status(status)
+                .body(response);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(
-            InvalidCredentialsException ex
+            InvalidCredentialsException exception,
+            HttpServletRequest request
     ) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+
+        ErrorResponse response = new ErrorResponse(
+                OffsetDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse(ex.getMessage(), 401));
+                .status(status)
+                .body(response);
     }
-
-
 }

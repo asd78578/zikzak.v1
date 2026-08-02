@@ -1,12 +1,14 @@
 package com.example.zikzak.controller;
 
 import com.example.zikzak.dto.AccountResponse;
+import com.example.zikzak.dto.AuthResponse;
 import com.example.zikzak.dto.LoginRequest;
 import com.example.zikzak.dto.RegisterRequest;
 import com.example.zikzak.service.AccountService;
 import com.example.zikzak.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,17 +27,29 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public AccountResponse register(
-            @Valid @RequestBody RegisterRequest request
+    public ResponseEntity<AccountResponse> register(
+            @RequestBody RegisterRequest request
     ) {
-        return accountService.register(request);
+        AccountResponse response =
+                accountService.register(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @PostMapping("/login")
-    public String login(
-            @Valid @RequestBody LoginRequest request
+    public ResponseEntity<AuthResponse> login(
+            @RequestBody LoginRequest request
     ) {
-        return authService.login(request);
+        String token = authService.login(request);
+
+        AuthResponse response = new AuthResponse(
+                token,
+                "Bearer",
+                3_600_000L
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

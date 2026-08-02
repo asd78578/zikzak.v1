@@ -1,6 +1,11 @@
 package com.example.zikzak.dto;
 
+import java.time.OffsetDateTime;
+
 public record ErrorResponse(
+        OffsetDateTime timestamp,
+        int status,
+        String error,
         String message,
-        int status
+        String path
 ) {}
