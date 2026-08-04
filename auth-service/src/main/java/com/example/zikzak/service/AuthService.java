@@ -1,5 +1,6 @@
 package com.example.zikzak.service;
 
+import com.example.zikzak.dto.AuthResponse;
 import com.example.zikzak.dto.LoginRequest;
 import com.example.zikzak.user.Account;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,15 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    public String login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
         Account account = accountService.loginCheck(request);
-        return jwtService.generateToken(account);
+        String token = jwtService.generateToken(account);
+
+
+        return new AuthResponse(
+                token,
+                "Bearer",
+                3600L
+        );
     }
 }

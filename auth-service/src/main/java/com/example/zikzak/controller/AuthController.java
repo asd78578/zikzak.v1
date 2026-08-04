@@ -28,7 +28,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AccountResponse> register(
-            @RequestBody RegisterRequest request
+            @Valid @RequestBody RegisterRequest request
     ) {
         AccountResponse response =
                 accountService.register(request);
@@ -40,15 +40,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
-            @RequestBody LoginRequest request
+            @Valid @RequestBody LoginRequest request
     ) {
-        String token = authService.login(request);
-
-        AuthResponse response = new AuthResponse(
-                token,
-                "Bearer",
-                3_600_000L
-        );
+        AuthResponse response = authService.login(request);
 
         return ResponseEntity.ok(response);
     }
