@@ -1,8 +1,10 @@
 package com.example.zikzak.service;
 
 import com.example.zikzak.component.AccountMapper;
+import com.example.zikzak.dto.LoginRequest;
 import com.example.zikzak.dto.RegisterRequest;
 import com.example.zikzak.exception.EmailAlreadyExistsException;
+import com.example.zikzak.exception.InvalidCredentialsException;
 import com.example.zikzak.user.Account;
 import com.example.zikzak.user.AccountRepository;
 import com.example.zikzak.user.Role;
@@ -14,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -102,6 +106,38 @@ class AccountServiceTest {
 
         verify(accountRepository, never())
                 .save(any(Account.class));
+
+        verifyNoInteractions(accountMapper);
+    }
+
+    // тест неправильного пароля
+    @Test
+    void shouldRejectIncorrectPassword() {
+        // Arrange
+        LoginRequest request = new LoginRequest(
+                "USER@ZIKZAK.RU",
+                "wrongpassword"
+        );
+
+        Account account = new Account();
+        account.setEmail("user@zikzak.ru");
+        account.setPasswordHash(
+                passwordEncoder.encode("secret123")
+        );
+        account.setRole(Role.USER);
+
+        when(accountRepository.findByEmail("user@zikzak.ru"))
+                .thenReturn(Optional.of(account));
+
+        // Act + Assert
+        assertThatThrownBy(
+                () -> accountService.loginCheck(request)
+        )
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessage("Invalid username or password");
+
+        verify(accountRepository)
+                .findByEmail("user@zikzak.ru");
 
         verifyNoInteractions(accountMapper);
     }
