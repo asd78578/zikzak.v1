@@ -25,5 +25,5 @@ spring:
 
 security:
   jwt:
-    secret: ${JWT_SECRET:zikzak-development-secret-key-2026-1234567890}
+    secret: ${JWT_SECRET}
     expiration-ms: 3600000
