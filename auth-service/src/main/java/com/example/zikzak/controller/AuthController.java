@@ -1,18 +1,16 @@
 package com.example.zikzak.controller;
 
-import com.example.zikzak.dto.AccountResponse;
-import com.example.zikzak.dto.AuthResponse;
-import com.example.zikzak.dto.LoginRequest;
-import com.example.zikzak.dto.RegisterRequest;
+import com.example.zikzak.dto.*;
 import com.example.zikzak.service.AccountService;
 import com.example.zikzak.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AccountService accountService;
@@ -46,4 +44,35 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<AccountResponse> me(
+            Authentication authentication
+    ) {
+        Long accountId = (Long) authentication.getPrincipal();
+        AccountResponse response = accountService.getById(accountId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest request
+    ) {
+        AuthResponse response =
+                authService.refresh(request.refreshToken());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @Valid @RequestBody RefreshTokenRequest request
+    ) {
+        authService.logout(request.refreshToken());
+
+        return ResponseEntity.noContent().build();
+    }
+
 }

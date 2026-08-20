@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class AuthServiceTest {
+class AuthServiceTest {
 
     @Mock
     private AccountService accountService;
@@ -23,12 +23,14 @@ public class AuthServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     @InjectMocks
     private AuthService authService;
 
     @Test
     void loginShouldReturnAuthResponse() {
-        // Arrange — подготавливаем данные
         LoginRequest request = new LoginRequest(
                 "user13@example.com",
                 "password123"
@@ -42,20 +44,31 @@ public class AuthServiceTest {
                 .thenReturn(account);
 
         when(jwtService.generateToken(account))
-                .thenReturn("test-jwt-token");
+                .thenReturn("test-access-token");
 
-        // Act — вызываем тестируемый метод
+        when(refreshTokenService.issue(account))
+                .thenReturn("test-refresh-token");
+
+        when(jwtService.getExpirationSeconds())
+                .thenReturn(3600L);
+
         AuthResponse response = authService.login(request);
 
-        // Assert — проверяем результат
         assertEquals(
-                "test-jwt-token",
+                "test-access-token",
                 response.accessToken()
         );
+
+        assertEquals(
+                "test-refresh-token",
+                response.refreshToken()
+        );
+
         assertEquals(
                 "Bearer",
                 response.tokenType()
         );
+
         assertEquals(
                 3600L,
                 response.expiresIn()
@@ -63,6 +76,7 @@ public class AuthServiceTest {
 
         verify(accountService).loginCheck(request);
         verify(jwtService).generateToken(account);
-
+        verify(refreshTokenService).issue(account);
+        verify(jwtService).getExpirationSeconds();
     }
 }

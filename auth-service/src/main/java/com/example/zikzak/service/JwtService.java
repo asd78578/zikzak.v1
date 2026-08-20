@@ -80,4 +80,8 @@ public class JwtService {
         }
     }
 
+    public long getExpirationSeconds() {
+        return expirationMs / 1000;
+    }
+
 }

@@ -12,6 +12,7 @@ import com.example.zikzak.user.Role;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.zikzak.exception.AccountNotFoundException;
 
 import java.util.Locale;
 
@@ -67,6 +68,14 @@ public class AccountService {
         }
 
         return account;
+    }
+
+    @Transactional(readOnly = true)
+    public AccountResponse getById(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException(accountId));
+
+        return accountMapper.toResponse(account);
     }
 
     private String normalizeEmail(String email) {
