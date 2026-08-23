@@ -24,5 +24,31 @@ services:
       retries: 5
       start_period: 10s
 
+  user-postgres:
+    image: postgres:17
+    container_name: user-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME:-zikzak_users}
+      POSTGRES_USER: ${USER_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-postgres}
+
+    ports:
+      - "127.0.0.1:${USER_DB_PORT:-5433}:5432"
+
+    volumes:
+      - user_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${USER_DB_USER:-postgres} -d ${USER_DB_NAME:-zikzak_users}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   postgres_data:
+  user_postgres_data:
