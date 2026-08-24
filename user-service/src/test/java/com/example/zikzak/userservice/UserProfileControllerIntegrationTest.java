@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class UserProfileControllerIntegrationTest extends com.example.zikzak.userservice.PostgresContainerTest {
+class UserProfileControllerIntegrationTest
+        extends PostgresContainerTest {
+
+    private static final String MY_PROFILE_URL =
+            "/api/v1/profiles/me";
 
     @Autowired
     private MockMvc mockMvc;
@@ -35,16 +40,22 @@ class UserProfileControllerIntegrationTest extends com.example.zikzak.userservic
     private UserProfileRepository repository;
 
     @Test
-    void shouldCreateProfile() throws Exception {
-        CreateUserProfileRequest request = createRequest(201L);
+    void shouldCreateMyProfile() throws Exception {
+        CreateUserProfileRequest request = createRequest();
 
-        mockMvc.perform(post("/api/v1/profiles")
+        mockMvc.perform(post(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearerToken(201L)
+                        )
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(
+                                objectMapper.writeValueAsString(request)
+                        ))
                 .andExpect(status().isCreated())
                 .andExpect(header().string(
-                        "Location",
-                        "/api/v1/profiles/201"
+                        HttpHeaders.LOCATION,
+                        MY_PROFILE_URL
                 ))
                 .andExpect(jsonPath("$.accountId").value(201))
                 .andExpect(jsonPath("$.firstName").value("Alauddin"))
@@ -54,10 +65,14 @@ class UserProfileControllerIntegrationTest extends com.example.zikzak.userservic
     }
 
     @Test
-    void shouldGetProfileByAccountId() throws Exception {
+    void shouldGetMyProfile() throws Exception {
         repository.saveAndFlush(createProfile(202L));
 
-        mockMvc.perform(get("/api/v1/profiles/202"))
+        mockMvc.perform(get(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearerToken(202L)
+                        ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value(202))
                 .andExpect(jsonPath("$.firstName").value("Alauddin"))
@@ -65,35 +80,50 @@ class UserProfileControllerIntegrationTest extends com.example.zikzak.userservic
     }
 
     @Test
-    void shouldReturnNotFoundForUnknownProfile() throws Exception {
-        mockMvc.perform(get("/api/v1/profiles/999999"))
+    void shouldReturnNotFoundWhenMyProfileDoesNotExist()
+            throws Exception {
+
+        mockMvc.perform(get(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearerToken(999999L)
+                        ))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Not Found"))
-                .andExpect(jsonPath("$.message")
-                        .value("User profile not found for accountId: 999999"))
-                .andExpect(jsonPath("$.path")
-                        .value("/api/v1/profiles/999999"));
+                .andExpect(jsonPath("$.message").value(
+                        "User profile not found for accountId: 999999"
+                ))
+                .andExpect(jsonPath("$.path").value(MY_PROFILE_URL));
     }
 
     @Test
-    void shouldReturnConflictForDuplicateProfile() throws Exception {
+    void shouldReturnConflictWhenMyProfileAlreadyExists()
+            throws Exception {
+
         repository.saveAndFlush(createProfile(203L));
 
-        CreateUserProfileRequest request = createRequest(203L);
-
-        mockMvc.perform(post("/api/v1/profiles")
+        mockMvc.perform(post(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearerToken(203L)
+                        )
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(
+                                objectMapper.writeValueAsString(
+                                        createRequest()
+                                )
+                        ))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
-                .andExpect(jsonPath("$.message")
-                        .value("User profile already exists for accountId: 203"));
+                .andExpect(jsonPath("$.message").value(
+                        "User profile already exists for accountId: 203"
+                ));
     }
 
     @Test
-    void shouldUpdateProfile() throws Exception {
+    void shouldUpdateMyProfile() throws Exception {
         repository.saveAndFlush(createProfile(204L));
 
         UpdateUserProfileRequest request =
@@ -105,22 +135,31 @@ class UserProfileControllerIntegrationTest extends com.example.zikzak.userservic
                         "https://example.com/updated-avatar.jpg"
                 );
 
-        mockMvc.perform(put("/api/v1/profiles/204")
+        mockMvc.perform(put(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearerToken(204L)
+                        )
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(
+                                objectMapper.writeValueAsString(request)
+                        ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value(204))
                 .andExpect(jsonPath("$.firstName").value("Updated"))
                 .andExpect(jsonPath("$.lastName").value("User"))
-                .andExpect(jsonPath("$.displayName").value("Updated Name"))
-                .andExpect(jsonPath("$.bio").value("Updated profile"));
+                .andExpect(jsonPath("$.displayName")
+                        .value("Updated Name"))
+                .andExpect(jsonPath("$.bio")
+                        .value("Updated profile"));
     }
 
     @Test
-    void shouldReturnBadRequestForInvalidProfile() throws Exception {
+    void shouldReturnBadRequestForInvalidProfile()
+            throws Exception {
+
         CreateUserProfileRequest request =
                 new CreateUserProfileRequest(
-                        -1L,
                         "Alauddin",
                         "Developer",
                         "",
@@ -128,23 +167,69 @@ class UserProfileControllerIntegrationTest extends com.example.zikzak.userservic
                         null
                 );
 
-        mockMvc.perform(post("/api/v1/profiles")
+        mockMvc.perform(post(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearerToken(205L)
+                        )
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(
+                                objectMapper.writeValueAsString(request)
+                        ))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message")
-                        .value("Request validation failed"))
-                .andExpect(jsonPath("$.validationErrors.accountId")
-                        .value("accountId must be positive"))
-                .andExpect(jsonPath("$.validationErrors.displayName")
-                        .value("displayName is required"));
+                .andExpect(jsonPath("$.message").value(
+                        "Request validation failed"
+                ))
+                .andExpect(jsonPath(
+                        "$.validationErrors.displayName"
+                ).value("displayName is required"));
     }
 
-    private CreateUserProfileRequest createRequest(Long accountId) {
+    @Test
+    void shouldReturnUnauthorizedWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(get(MY_PROFILE_URL))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedForInvalidToken()
+            throws Exception {
+
+        mockMvc.perform(get(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                "Bearer invalid-token"
+                        ))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldNotReturnAnotherUsersProfile()
+            throws Exception {
+
+        repository.saveAndFlush(createProfile(301L));
+
+        mockMvc.perform(get(MY_PROFILE_URL)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearerToken(302L)
+                        ))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(
+                        "User profile not found for accountId: 302"
+                ));
+    }
+
+    private String bearerToken(Long accountId) {
+        return "Bearer " + TestJwtFactory.createToken(accountId);
+    }
+
+    private CreateUserProfileRequest createRequest() {
         return new CreateUserProfileRequest(
-                accountId,
                 "Alauddin",
                 "Developer",
                 "Alauddin",
@@ -159,7 +244,9 @@ class UserProfileControllerIntegrationTest extends com.example.zikzak.userservic
         profile.setLastName("Developer");
         profile.setDisplayName("Alauddin");
         profile.setBio("ZikZak profile");
-        profile.setAvatarUrl("https://example.com/avatar.jpg");
+        profile.setAvatarUrl(
+                "https://example.com/avatar.jpg"
+        );
         return profile;
     }
 }

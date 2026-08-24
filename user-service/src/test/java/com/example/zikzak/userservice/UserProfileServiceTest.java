@@ -37,13 +37,13 @@ class UserProfileServiceTest {
 
     @Test
     void shouldCreateProfile() {
-        CreateUserProfileRequest request = createRequest(101L);
+        CreateUserProfileRequest request = createRequest();
 
         when(repository.existsByAccountId(101L)).thenReturn(false);
         when(repository.saveAndFlush(any(UserProfile.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = service.create(request);
+        var response = service.create(101L, request);
 
         assertThat(response.accountId()).isEqualTo(101L);
         assertThat(response.firstName()).isEqualTo("Alauddin");
@@ -55,15 +55,16 @@ class UserProfileServiceTest {
 
     @Test
     void shouldRejectDuplicateProfile() {
-        CreateUserProfileRequest request = createRequest(102L);
+        CreateUserProfileRequest request = createRequest();
 
         when(repository.existsByAccountId(102L)).thenReturn(true);
 
-        assertThatThrownBy(() -> service.create(request))
+        assertThatThrownBy(() -> service.create(102L, request))
                 .isInstanceOf(UserProfileAlreadyExistsException.class)
                 .hasMessageContaining("102");
 
-        verify(repository, never()).saveAndFlush(any(UserProfile.class));
+        verify(repository, never())
+                .saveAndFlush(any(UserProfile.class));
     }
 
     @Test
@@ -119,9 +120,8 @@ class UserProfileServiceTest {
         verify(repository).saveAndFlush(profile);
     }
 
-    private CreateUserProfileRequest createRequest(Long accountId) {
+    private CreateUserProfileRequest createRequest() {
         return new CreateUserProfileRequest(
-                accountId,
                 "Alauddin",
                 "Developer",
                 "Alauddin",
