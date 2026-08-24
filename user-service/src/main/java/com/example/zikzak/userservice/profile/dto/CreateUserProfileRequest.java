@@ -7,10 +7,6 @@ import jakarta.validation.constraints.Size;
 
 public record CreateUserProfileRequest(
 
-        @NotNull(message = "accountId is required")
-        @Positive(message = "accountId must be positive")
-        Long accountId,
-
         @Size(max = 100, message = "firstName must not exceed 100 characters")
         String firstName,
 

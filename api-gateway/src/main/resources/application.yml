@@ -1,0 +1,25 @@
+server:
+  port: ${API_GATEWAY_PORT:8090}
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URI:http://127.0.0.1:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: user-service
+          uri: ${USER_SERVICE_URI:http://127.0.0.1:8082}
+          predicates:
+            - Path=/api/v1/profiles/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

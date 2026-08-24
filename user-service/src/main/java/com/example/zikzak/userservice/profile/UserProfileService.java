@@ -18,12 +18,15 @@ public class UserProfileService {
     }
 
     @Transactional
-    public UserProfileResponse create(CreateUserProfileRequest request) {
-        if (repository.existsByAccountId(request.accountId())) {
-            throw new UserProfileAlreadyExistsException(request.accountId());
+    public UserProfileResponse create(
+            Long accountId,
+            CreateUserProfileRequest request
+    ) {
+        if (repository.existsByAccountId(accountId)) {
+            throw new UserProfileAlreadyExistsException(accountId);
         }
 
-        UserProfile profile = new UserProfile(request.accountId());
+        UserProfile profile = new UserProfile(accountId);
         profile.setFirstName(request.firstName());
         profile.setLastName(request.lastName());
         profile.setDisplayName(request.displayName());
