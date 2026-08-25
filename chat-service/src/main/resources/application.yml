@@ -1,0 +1,28 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: chat-service
+
+  datasource:
+    url: jdbc:postgresql://${CHAT_DB_HOST:localhost}:${CHAT_DB_PORT:5435}/${CHAT_DB_NAME:zikzak_chats}
+    username: ${CHAT_DB_USER:postgres}
+    password: ${CHAT_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
