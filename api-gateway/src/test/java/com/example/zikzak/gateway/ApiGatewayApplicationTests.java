@@ -23,7 +23,7 @@ class ApiGatewayApplicationTests {
     }
 
     @Test
-    void shouldContainAuthAndUserRoutes() {
+    void shouldContainConfiguredRoutes() {
         List<String> routeIds = routeLocator.getRoutes()
                 .map(Route::getId)
                 .collectList()
@@ -31,9 +31,10 @@ class ApiGatewayApplicationTests {
 
         assertThat(routeIds)
                 .isNotNull()
-                .contains(
+                .containsExactlyInAnyOrder(
                         "auth-service",
-                        "user-service"
+                        "user-service",
+                        "chat-service"
                 );
     }
 }

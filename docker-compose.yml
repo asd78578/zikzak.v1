@@ -49,6 +49,32 @@ services:
       retries: 5
       start_period: 10s
 
+  chat-postgres:
+    image: postgres:17
+    container_name: chat-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${CHAT_DB_NAME:-zikzak_chats}
+      POSTGRES_USER: ${CHAT_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${CHAT_DB_PASSWORD:-postgres}
+
+    ports:
+      - "127.0.0.1:${CHAT_DB_PORT:-5435}:5432"
+
+    volumes:
+      - chat_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${CHAT_DB_USER:-postgres} -d ${CHAT_DB_NAME:-zikzak_chats}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   postgres_data:
   user_postgres_data:
+  chat_postgres_data:

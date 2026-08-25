@@ -1,0 +1,99 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-chats
+      author: zikzak
+      changes:
+        - createTable:
+            tableName: chats
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_chats
+                    nullable: false
+
+              - column:
+                  name: type
+                  type: VARCHAR(20)
+                  defaultValue: DIRECT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: direct_key
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: chats
+            columnNames: direct_key
+            constraintName: uk_chats_direct_key
+
+        - createTable:
+            tableName: chat_members
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_chat_members
+                    nullable: false
+
+              - column:
+                  name: chat_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: account_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: joined_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: chat_members
+            baseColumnNames: chat_id
+            referencedTableName: chats
+            referencedColumnNames: id
+            constraintName: fk_chat_members_chat
+            onDelete: CASCADE
+
+        - addUniqueConstraint:
+            tableName: chat_members
+            columnNames: chat_id, account_id
+            constraintName: uk_chat_members_chat_account
+
+        - createIndex:
+            tableName: chat_members
+            indexName: idx_chat_members_account_id
+            columns:
+              - column:
+                  name: account_id
