@@ -34,6 +34,7 @@ class ApiGatewayApplicationTests {
                 .containsExactlyInAnyOrder(
                         "auth-service",
                         "user-service",
+                        "message-service",
                         "chat-service"
                 );
     }

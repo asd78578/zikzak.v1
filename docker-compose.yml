@@ -74,7 +74,33 @@ services:
       retries: 5
       start_period: 10s
 
+  message-postgres:
+    image: postgres:17
+    container_name: message-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${MESSAGE_DB_NAME:-zikzak_messages}
+      POSTGRES_USER: ${MESSAGE_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${MESSAGE_DB_PASSWORD:-postgres}
+
+    ports:
+      - "127.0.0.1:${MESSAGE_DB_PORT:-5439}:5432"
+
+    volumes:
+      - message_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${MESSAGE_DB_USER:-postgres} -d ${MESSAGE_DB_NAME:-zikzak_messages}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   postgres_data:
   user_postgres_data:
   chat_postgres_data:
+  message_postgres_data:

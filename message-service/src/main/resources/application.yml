@@ -1,0 +1,32 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: message-service
+
+  datasource:
+    url: jdbc:postgresql://${MESSAGE_DB_HOST:localhost}:${MESSAGE_DB_PORT:5439}/${MESSAGE_DB_NAME:zikzak_messages}
+    username: ${MESSAGE_DB_USER:postgres}
+    password: ${MESSAGE_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+
+services:
+  chat:
+    url: ${CHAT_SERVICE_URL:http://127.0.0.1:8083}

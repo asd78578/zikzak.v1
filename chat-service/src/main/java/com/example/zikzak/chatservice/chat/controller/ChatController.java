@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.zikzak.chatservice.chat.dto.ChatMembershipResponse;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import java.util.List;
 
 @RestController
@@ -51,5 +54,21 @@ public class ChatController {
                 (Long) authentication.getPrincipal();
 
         return chatService.findChats(currentAccountId);
+    }
+
+    @GetMapping("/{chatId}/membership/me")
+    public ChatMembershipResponse checkMyMembership(
+            @PathVariable Long chatId,
+            Authentication authentication
+    ) {
+        Long currentAccountId =
+                (Long) authentication.getPrincipal();
+
+        boolean member = chatService.isMember(
+                chatId,
+                currentAccountId
+        );
+
+        return new ChatMembershipResponse(member);
     }
 }
