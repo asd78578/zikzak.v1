@@ -12,8 +12,14 @@ public class ChatService {
 
     private final ChatRepository chatRepository;
 
-    public ChatService(ChatRepository chatRepository) {
+    private final ChatMemberRepository memberRepository;
+
+    public ChatService(
+            ChatRepository chatRepository,
+            ChatMemberRepository memberRepository
+    ) {
         this.chatRepository = chatRepository;
+        this.memberRepository = memberRepository;
     }
 
     @Transactional
@@ -59,5 +65,16 @@ public class ChatService {
         long smaller = Math.min(firstAccountId, secondAccountId);
         long larger = Math.max(firstAccountId, secondAccountId);
         return smaller + ":" + larger;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isMember(
+            Long chatId,
+            Long accountId
+    ) {
+        return memberRepository.existsByChatIdAndAccountId(
+                chatId,
+                accountId
+        );
     }
 }
