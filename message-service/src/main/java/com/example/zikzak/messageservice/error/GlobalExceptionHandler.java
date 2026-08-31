@@ -9,6 +9,32 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(MessageNotFoundException.class)
+    ProblemDetail handleMessageNotFound(
+            MessageNotFoundException exception
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage()
+        );
+
+        problem.setTitle("Message not found");
+        return problem;
+    }
+
+    @ExceptionHandler(MessageAccessDeniedException.class)
+    ProblemDetail handleMessageAccessDenied(
+            MessageAccessDeniedException exception
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.FORBIDDEN,
+                exception.getMessage()
+        );
+
+        problem.setTitle("Message access denied");
+        return problem;
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     ProblemDetail handleAccessDenied(
             AccessDeniedException exception
@@ -19,6 +45,19 @@ public class GlobalExceptionHandler {
         );
 
         problem.setTitle("Chat access denied");
+        return problem;
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    ProblemDetail handleIllegalState(
+            IllegalStateException exception
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
+
+        problem.setTitle("Message state conflict");
         return problem;
     }
 }

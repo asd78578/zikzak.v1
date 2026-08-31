@@ -69,6 +69,26 @@ public class Message {
         updatedAt = OffsetDateTime.now();
     }
 
+    public void editContent(String newContent) {
+        if (status == MessageStatus.DELETED) {
+            throw new IllegalStateException(
+                    "Deleted message cannot be edited"
+            );
+        }
+
+        content = newContent;
+        status = MessageStatus.EDITED;
+    }
+
+    public void softDelete() {
+        content = "";
+        status = MessageStatus.DELETED;
+    }
+
+    public boolean isDeleted() {
+        return status == MessageStatus.DELETED;
+    }
+
     public Long getId() {
         return id;
     }
