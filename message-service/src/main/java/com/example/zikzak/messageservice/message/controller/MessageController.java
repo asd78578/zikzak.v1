@@ -1,6 +1,7 @@
 package com.example.zikzak.messageservice.message.controller;
 
 import com.example.zikzak.messageservice.message.MessageService;
+import com.example.zikzak.messageservice.message.dto.EditMessageRequest;
 import com.example.zikzak.messageservice.message.dto.MessageResponse;
 import com.example.zikzak.messageservice.message.dto.SendMessageRequest;
 import jakarta.validation.Valid;
@@ -8,11 +9,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpHeaders;
 
 @RestController
 @RequestMapping("/api/v1/chats/{chatId}/messages")
@@ -31,6 +32,7 @@ public class MessageController {
             @PathVariable
             @Positive
             Long chatId,
+
             @RequestHeader(HttpHeaders.AUTHORIZATION)
             String authorizationHeader,
 
@@ -55,6 +57,7 @@ public class MessageController {
             @PathVariable
             @Positive
             Long chatId,
+
             @RequestHeader(HttpHeaders.AUTHORIZATION)
             String authorizationHeader,
 
@@ -72,6 +75,62 @@ public class MessageController {
                 authorizationHeader,
                 page,
                 size
+        );
+    }
+
+    @PutMapping("/{messageId}")
+    public MessageResponse edit(
+            @PathVariable
+            @Positive
+            Long chatId,
+
+            @PathVariable
+            @Positive
+            Long messageId,
+
+            @RequestHeader(HttpHeaders.AUTHORIZATION)
+            String authorizationHeader,
+
+            @Valid
+            @RequestBody
+            EditMessageRequest request,
+
+            Authentication authentication
+    ) {
+        Long currentAccountId = (Long) authentication.getPrincipal();
+
+        return service.edit(
+                chatId,
+                messageId,
+                currentAccountId,
+                authorizationHeader,
+                request
+        );
+    }
+
+    @DeleteMapping("/{messageId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @PathVariable
+            @Positive
+            Long chatId,
+
+            @PathVariable
+            @Positive
+            Long messageId,
+
+            @RequestHeader(HttpHeaders.AUTHORIZATION)
+            String authorizationHeader,
+
+            Authentication authentication
+    ) {
+        Long currentAccountId = (Long) authentication.getPrincipal();
+
+        service.delete(
+                chatId,
+                messageId,
+                currentAccountId,
+                authorizationHeader
         );
     }
 }

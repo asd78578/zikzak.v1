@@ -1,9 +1,13 @@
 package com.example.zikzak.messageservice;
 
 import com.example.zikzak.messageservice.chat.ChatMembershipClient;
+import com.example.zikzak.messageservice.error.MessageAccessDeniedException;
+import com.example.zikzak.messageservice.error.MessageNotFoundException;
 import com.example.zikzak.messageservice.message.Message;
 import com.example.zikzak.messageservice.message.MessageRepository;
 import com.example.zikzak.messageservice.message.MessageService;
+import com.example.zikzak.messageservice.message.MessageStatus;
+import com.example.zikzak.messageservice.message.dto.EditMessageRequest;
 import com.example.zikzak.messageservice.message.dto.SendMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +18,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,6 +61,7 @@ class MessageServiceTest {
         assertThat(response.chatId()).isEqualTo(10L);
         assertThat(response.senderAccountId()).isEqualTo(100L);
         assertThat(response.content()).isEqualTo("Hello ZikZak");
+        assertThat(response.status()).isEqualTo(MessageStatus.SENT);
 
         verify(chatMembershipClient)
                 .verifyMembership(10L, TOKEN);
@@ -93,16 +99,149 @@ class MessageServiceTest {
     }
 
     @Test
+    void shouldEditOwnMessage() {
+        Message message = new Message(
+                30L,
+                200L,
+                "Old content"
+        );
+
+        when(repository.findByIdAndChatId(1L, 30L))
+                .thenReturn(Optional.of(message));
+        when(repository.saveAndFlush(message))
+                .thenReturn(message);
+
+        var response = service.edit(
+                30L,
+                1L,
+                200L,
+                TOKEN,
+                new EditMessageRequest("  New content  ")
+        );
+
+        assertThat(response.content()).isEqualTo("New content");
+        assertThat(response.status()).isEqualTo(MessageStatus.EDITED);
+
+        verify(chatMembershipClient)
+                .verifyMembership(30L, TOKEN);
+        verify(repository).saveAndFlush(message);
+    }
+
+    @Test
+    void shouldSoftDeleteOwnMessage() {
+        Message message = new Message(
+                40L,
+                300L,
+                "Message to delete"
+        );
+
+        when(repository.findByIdAndChatId(2L, 40L))
+                .thenReturn(Optional.of(message));
+        when(repository.saveAndFlush(message))
+                .thenReturn(message);
+
+        service.delete(
+                40L,
+                2L,
+                300L,
+                TOKEN
+        );
+
+        assertThat(message.getContent()).isEmpty();
+        assertThat(message.getStatus())
+                .isEqualTo(MessageStatus.DELETED);
+        assertThat(message.isDeleted()).isTrue();
+
+        verify(repository).saveAndFlush(message);
+    }
+
+    @Test
+    void shouldRejectEditingAnotherUsersMessage() {
+        Message message = new Message(
+                50L,
+                400L,
+                "Another user's message"
+        );
+
+        when(repository.findByIdAndChatId(3L, 50L))
+                .thenReturn(Optional.of(message));
+
+        assertThatThrownBy(() ->
+                service.edit(
+                        50L,
+                        3L,
+                        401L,
+                        TOKEN,
+                        new EditMessageRequest("Forbidden edit")
+                )
+        ).isInstanceOf(MessageAccessDeniedException.class)
+                .hasMessage(
+                        "You cannot modify another user's message"
+                );
+
+        verify(repository, never())
+                .saveAndFlush(any(Message.class));
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenMessageDoesNotExist() {
+        when(repository.findByIdAndChatId(999L, 60L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.delete(
+                        60L,
+                        999L,
+                        500L,
+                        TOKEN
+                )
+        ).isInstanceOf(MessageNotFoundException.class)
+                .hasMessage(
+                        "Message with id 999 was not found"
+                );
+
+        verify(repository, never())
+                .saveAndFlush(any(Message.class));
+    }
+
+    @Test
+    void shouldRejectEditingDeletedMessage() {
+        Message message = new Message(
+                70L,
+                600L,
+                "Deleted message"
+        );
+        message.softDelete();
+
+        when(repository.findByIdAndChatId(4L, 70L))
+                .thenReturn(Optional.of(message));
+
+        assertThatThrownBy(() ->
+                service.edit(
+                        70L,
+                        4L,
+                        600L,
+                        TOKEN,
+                        new EditMessageRequest("New content")
+                )
+        ).isInstanceOf(IllegalStateException.class)
+                .hasMessage("Deleted message cannot be edited");
+
+        verify(repository, never())
+                .saveAndFlush(any(Message.class));
+    }
+
+    @Test
     void shouldNotSaveMessageWhenMembershipCheckFails() {
         doThrow(
                 new AccessDeniedException("Not a chat member")
         ).when(chatMembershipClient)
-                .verifyMembership(30L, TOKEN);
+                .verifyMembership(80L, TOKEN);
 
         assertThatThrownBy(() ->
                 service.send(
-                        30L,
-                        102L,
+                        80L,
+                        700L,
                         TOKEN,
                         new SendMessageRequest("Forbidden message")
                 )

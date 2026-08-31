@@ -1,6 +1,9 @@
 package com.example.zikzak.messageservice.message;
 
 import com.example.zikzak.messageservice.chat.ChatMembershipClient;
+import com.example.zikzak.messageservice.message.dto.EditMessageRequest;
+import com.example.zikzak.messageservice.error.MessageAccessDeniedException;
+import com.example.zikzak.messageservice.error.MessageNotFoundException;
 import com.example.zikzak.messageservice.message.dto.MessageResponse;
 import com.example.zikzak.messageservice.message.dto.SendMessageRequest;
 import org.springframework.data.domain.Page;
@@ -60,13 +63,72 @@ public class MessageService {
                 page,
                 size,
                 Sort.by(
-                        Sort.Order.asc("createdAt"),
-                        Sort.Order.asc("id")
+                        Sort.Order.desc("createdAt"),
+                        Sort.Order.desc("id")
                 )
         );
 
         return repository.findByChatId(chatId, pageRequest)
                 .map(this::toResponse);
+    }
+
+    @Transactional
+    public MessageResponse edit(
+            Long chatId,
+            Long messageId,
+            Long currentAccountId,
+            String authorizationHeader,
+            EditMessageRequest request
+    ) {
+        chatMembershipClient.verifyMembership(
+                chatId,
+                authorizationHeader
+        );
+
+        Message message = findMessage(chatId, messageId);
+        verifyOwner(message, currentAccountId);
+
+        message.editContent(request.content().trim());
+
+        return toResponse(repository.saveAndFlush(message));
+    }
+
+    @Transactional
+    public void delete(
+            Long chatId,
+            Long messageId,
+            Long currentAccountId,
+            String authorizationHeader
+    ) {
+        chatMembershipClient.verifyMembership(
+                chatId,
+                authorizationHeader
+        );
+
+        Message message = findMessage(chatId, messageId);
+        verifyOwner(message, currentAccountId);
+
+        message.softDelete();
+        repository.saveAndFlush(message);
+    }
+
+    private Message findMessage(
+            Long chatId,
+            Long messageId
+    ) {
+        return repository.findByIdAndChatId(messageId, chatId)
+                .orElseThrow(
+                        () -> new MessageNotFoundException(messageId)
+                );
+    }
+
+    private void verifyOwner(
+            Message message,
+            Long currentAccountId
+    ) {
+        if (!message.getSenderAccountId().equals(currentAccountId)) {
+            throw new MessageAccessDeniedException();
+        }
     }
 
     private MessageResponse toResponse(Message message) {
