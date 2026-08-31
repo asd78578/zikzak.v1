@@ -6,13 +6,13 @@ import com.example.zikzak.messageservice.message.MessageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.doThrow;
@@ -23,7 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class MessageControllerIntegrationTest extends com.example.zikzak.messageservice.PostgresContainerTest {
+class MessageControllerIntegrationTest
+        extends PostgresContainerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,17 +67,28 @@ class MessageControllerIntegrationTest extends com.example.zikzak.messageservice
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.chatId").value(10))
                 .andExpect(jsonPath("$.senderAccountId").value(100))
-                .andExpect(jsonPath("$.content").value("Hello ZikZak"))
-                .andExpect(jsonPath("$.status").value("SENT"));
+                .andExpect(jsonPath("$.content")
+                        .value("Hello ZikZak"))
+                .andExpect(jsonPath("$.status")
+                        .value("SENT"));
     }
 
     @Test
     void shouldReturnMessageHistory() throws Exception {
         repository.saveAndFlush(
-                new Message(20L, 101L, "First message")
+                new Message(
+                        20L,
+                        101L,
+                        "First message"
+                )
         );
+
         repository.saveAndFlush(
-                new Message(20L, 102L, "Second message")
+                new Message(
+                        20L,
+                        102L,
+                        "Second message"
+                )
         );
 
         mockMvc.perform(
@@ -87,11 +99,24 @@ class MessageControllerIntegrationTest extends com.example.zikzak.messageservice
                                 )
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.content[0].content")
-                        .value("First message"))
-                .andExpect(jsonPath("$.content[1].content")
-                        .value("Second message"));
+                .andExpect(
+                        jsonPath(
+                                "$.content",
+                                hasSize(2)
+                        )
+                )
+                .andExpect(
+                        jsonPath(
+                                "$.content[0].content"
+                        )
+                                .value("Second message")
+                )
+                .andExpect(
+                        jsonPath(
+                                "$.content[1].content"
+                        )
+                                .value("First message")
+                );
     }
 
     @Test
@@ -116,9 +141,16 @@ class MessageControllerIntegrationTest extends com.example.zikzak.messageservice
     void shouldRejectAccountOutsideChat() throws Exception {
         String authorization = bearerToken(104L);
 
-        doThrow(new AccessDeniedException("Not a chat member"))
+        doThrow(
+                new AccessDeniedException(
+                        "Not a chat member"
+                )
+        )
                 .when(chatMembershipClient)
-                .verifyMembership(40L, authorization);
+                .verifyMembership(
+                        40L,
+                        authorization
+                );
 
         mockMvc.perform(
                         post("/api/v1/chats/40/messages")
@@ -134,11 +166,14 @@ class MessageControllerIntegrationTest extends com.example.zikzak.messageservice
                                         """)
                 )
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.title")
-                        .value("Chat access denied"));
+                .andExpect(
+                        jsonPath("$.title")
+                                .value("Chat access denied")
+                );
     }
 
     private String bearerToken(Long accountId) {
-        return "Bearer " + com.example.zikzak.messageservice.TestJwtFactory.createToken(accountId);
+        return "Bearer "
+                + TestJwtFactory.createToken(accountId);
     }
 }
