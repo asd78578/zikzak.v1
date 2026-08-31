@@ -1,14 +1,15 @@
 package com.example.zikzak.messageservice.message;
 
 import com.example.zikzak.messageservice.chat.ChatMembershipClient;
-import com.example.zikzak.messageservice.message.dto.EditMessageRequest;
 import com.example.zikzak.messageservice.error.MessageAccessDeniedException;
 import com.example.zikzak.messageservice.error.MessageNotFoundException;
+import com.example.zikzak.messageservice.message.dto.EditMessageRequest;
 import com.example.zikzak.messageservice.message.dto.MessageResponse;
 import com.example.zikzak.messageservice.message.dto.SendMessageRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,13 +18,16 @@ public class MessageService {
 
     private final MessageRepository repository;
     private final ChatMembershipClient chatMembershipClient;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public MessageService(
             MessageRepository repository,
-            ChatMembershipClient chatMembershipClient
+            ChatMembershipClient chatMembershipClient,
+            SimpMessagingTemplate messagingTemplate
     ) {
         this.repository = repository;
         this.chatMembershipClient = chatMembershipClient;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
@@ -44,7 +48,15 @@ public class MessageService {
                 request.content().trim()
         );
 
-        return toResponse(repository.saveAndFlush(message));
+        MessageResponse response =
+                toResponse(repository.saveAndFlush(message));
+
+        messagingTemplate.convertAndSend(
+                "/topic/chats/" + chatId,
+                response
+        );
+
+        return response;
     }
 
     @Transactional(readOnly = true)

@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.example.zikzak.messageservice.message.dto.MessageResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,13 +38,17 @@ class MessageServiceTest {
     @Mock
     private ChatMembershipClient chatMembershipClient;
 
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
+
     private MessageService service;
 
     @BeforeEach
     void setUp() {
         service = new MessageService(
                 repository,
-                chatMembershipClient
+                chatMembershipClient,
+                messagingTemplate
         );
     }
 
@@ -65,7 +71,15 @@ class MessageServiceTest {
 
         verify(chatMembershipClient)
                 .verifyMembership(10L, TOKEN);
-        verify(repository).saveAndFlush(any(Message.class));
+
+        verify(repository)
+                .saveAndFlush(any(Message.class));
+
+        verify(messagingTemplate)
+                .convertAndSend(
+                        eq("/topic/chats/10"),
+                        any(MessageResponse.class)
+                );
     }
 
     @Test
@@ -249,5 +263,11 @@ class MessageServiceTest {
 
         verify(repository, never())
                 .saveAndFlush(any(Message.class));
+
+        verify(messagingTemplate, never())
+                .convertAndSend(
+                        anyString(),
+                        any(Object.class)
+                );
     }
 }
