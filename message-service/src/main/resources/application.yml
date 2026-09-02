@@ -23,6 +23,16 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
 security:
   jwt:
     secret: ${JWT_SECRET}
@@ -30,3 +40,8 @@ security:
 services:
   chat:
     url: ${CHAT_SERVICE_URL:http://127.0.0.1:8083}
+
+app:
+  kafka:
+    topics:
+      message-events: ${MESSAGE_EVENTS_TOPIC:message.events.v1}

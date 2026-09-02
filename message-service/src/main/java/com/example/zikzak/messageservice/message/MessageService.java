@@ -3,6 +3,8 @@ package com.example.zikzak.messageservice.message;
 import com.example.zikzak.messageservice.chat.ChatMembershipClient;
 import com.example.zikzak.messageservice.error.MessageAccessDeniedException;
 import com.example.zikzak.messageservice.error.MessageNotFoundException;
+import com.example.zikzak.messageservice.event.MessageEventPublisher;
+import com.example.zikzak.messageservice.event.MessageEventType;
 import com.example.zikzak.messageservice.message.dto.EditMessageRequest;
 import com.example.zikzak.messageservice.message.dto.MessageResponse;
 import com.example.zikzak.messageservice.message.dto.SendMessageRequest;
@@ -19,15 +21,18 @@ public class MessageService {
     private final MessageRepository repository;
     private final ChatMembershipClient chatMembershipClient;
     private final SimpMessagingTemplate messagingTemplate;
+    private final MessageEventPublisher eventPublisher;
 
     public MessageService(
             MessageRepository repository,
             ChatMembershipClient chatMembershipClient,
-            SimpMessagingTemplate messagingTemplate
+            SimpMessagingTemplate messagingTemplate,
+            MessageEventPublisher eventPublisher
     ) {
         this.repository = repository;
         this.chatMembershipClient = chatMembershipClient;
         this.messagingTemplate = messagingTemplate;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -48,8 +53,13 @@ public class MessageService {
                 request.content().trim()
         );
 
-        MessageResponse response =
-                toResponse(repository.saveAndFlush(message));
+        Message savedMessage = repository.saveAndFlush(message);
+        MessageResponse response = toResponse(savedMessage);
+
+        eventPublisher.publish(
+                MessageEventType.MESSAGE_SENT,
+                savedMessage
+        );
 
         messagingTemplate.convertAndSend(
                 "/topic/chats/" + chatId,
@@ -102,7 +112,14 @@ public class MessageService {
 
         message.editContent(request.content().trim());
 
-        return toResponse(repository.saveAndFlush(message));
+        Message savedMessage = repository.saveAndFlush(message);
+
+        eventPublisher.publish(
+                MessageEventType.MESSAGE_EDITED,
+                savedMessage
+        );
+
+        return toResponse(savedMessage);
     }
 
     @Transactional
@@ -121,7 +138,12 @@ public class MessageService {
         verifyOwner(message, currentAccountId);
 
         message.softDelete();
-        repository.saveAndFlush(message);
+        Message savedMessage = repository.saveAndFlush(message);
+
+        eventPublisher.publish(
+                MessageEventType.MESSAGE_DELETED,
+                savedMessage
+        );
     }
 
     private Message findMessage(

@@ -18,6 +18,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.example.zikzak.messageservice.message.dto.MessageResponse;
+import com.example.zikzak.messageservice.event.MessageEventPublisher;
+import com.example.zikzak.messageservice.event.MessageEventType;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +43,9 @@ class MessageServiceTest {
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
+    @Mock
+    private MessageEventPublisher eventPublisher;
+
     private MessageService service;
 
     @BeforeEach
@@ -48,7 +53,8 @@ class MessageServiceTest {
         service = new MessageService(
                 repository,
                 chatMembershipClient,
-                messagingTemplate
+                messagingTemplate,
+                eventPublisher
         );
     }
 
@@ -80,6 +86,11 @@ class MessageServiceTest {
                         eq("/topic/chats/10"),
                         any(MessageResponse.class)
                 );
+
+        verify(eventPublisher).publish(
+                eq(MessageEventType.MESSAGE_SENT),
+                any(Message.class)
+        );
     }
 
     @Test
@@ -139,6 +150,11 @@ class MessageServiceTest {
         verify(chatMembershipClient)
                 .verifyMembership(30L, TOKEN);
         verify(repository).saveAndFlush(message);
+
+        verify(eventPublisher).publish(
+                MessageEventType.MESSAGE_EDITED,
+                message
+        );
     }
 
     @Test
@@ -167,6 +183,11 @@ class MessageServiceTest {
         assertThat(message.isDeleted()).isTrue();
 
         verify(repository).saveAndFlush(message);
+
+        verify(eventPublisher).publish(
+                MessageEventType.MESSAGE_DELETED,
+                message
+        );
     }
 
     @Test
@@ -269,5 +290,7 @@ class MessageServiceTest {
                         anyString(),
                         any(Object.class)
                 );
+
+        verifyNoInteractions(eventPublisher);
     }
 }
