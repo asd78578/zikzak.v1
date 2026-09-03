@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-last-message-to-chats
+      author: zikzak
+
+      changes:
+        - addColumn:
+            tableName: chats
+            columns:
+              - column:
+                  name: last_message_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: last_message_preview
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: last_message_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: true
+
+        - createIndex:
+            tableName: chats
+            indexName: idx_chats_last_message_at
+            columns:
+              - column:
+                  name: last_message_at

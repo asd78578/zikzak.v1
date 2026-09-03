@@ -33,6 +33,15 @@ public class Chat {
     @Column(name = "direct_key", nullable = false, unique = true, length = 100)
     private String directKey;
 
+    @Column(name = "last_message_id")
+    private Long lastMessageId;
+
+    @Column(name = "last_message_preview", length = 200)
+    private String lastMessagePreview;
+
+    @Column(name = "last_message_at")
+    private OffsetDateTime lastMessageAt;
+
     @OneToMany(
             mappedBy = "chat",
             cascade = CascadeType.ALL,
@@ -60,6 +69,50 @@ public class Chat {
         members.add(new ChatMember(this, accountId));
     }
 
+    public void applySentMessage(
+            Long messageId,
+            String content,
+            OffsetDateTime occurredAt
+    ) {
+        this.lastMessageId = messageId;
+        this.lastMessagePreview = createPreview(content);
+        this.lastMessageAt = occurredAt;
+    }
+
+    public void applyEditedMessage(
+            Long messageId,
+            String content
+    ) {
+        if (isLastMessage(messageId)) {
+            this.lastMessagePreview = createPreview(content);
+        }
+    }
+
+    public void applyDeletedMessage(Long messageId) {
+        if (isLastMessage(messageId)) {
+            this.lastMessagePreview = "Сообщение удалено";
+        }
+    }
+
+    private boolean isLastMessage(Long messageId) {
+        return lastMessageId != null
+                && lastMessageId.equals(messageId);
+    }
+
+    private String createPreview(String content) {
+        if (content == null) {
+            return "";
+        }
+
+        String normalized = content.strip();
+
+        if (normalized.length() <= 200) {
+            return normalized;
+        }
+
+        return normalized.substring(0, 197) + "...";
+    }
+
     public Long getId() {
         return id;
     }
@@ -74,6 +127,18 @@ public class Chat {
 
     public List<ChatMember> getMembers() {
         return Collections.unmodifiableList(members);
+    }
+
+    public Long getLastMessageId() {
+        return lastMessageId;
+    }
+
+    public String getLastMessagePreview() {
+        return lastMessagePreview;
+    }
+
+    public OffsetDateTime getLastMessageAt() {
+        return lastMessageAt;
     }
 
     public OffsetDateTime getCreatedAt() {
