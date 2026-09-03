@@ -11,6 +11,9 @@ public record ChatResponse(
         Long id,
         ChatType type,
         List<Long> memberAccountIds,
+        Long lastMessageId,
+        String lastMessagePreview,
+        OffsetDateTime lastMessageAt,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
@@ -26,6 +29,9 @@ public record ChatResponse(
                 chat.getId(),
                 chat.getType(),
                 memberAccountIds,
+                chat.getLastMessageId(),
+                chat.getLastMessagePreview(),
+                chat.getLastMessageAt(),
                 chat.getCreatedAt(),
                 chat.getUpdatedAt()
         );

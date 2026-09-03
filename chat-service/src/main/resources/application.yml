@@ -23,6 +23,28 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    consumer:
+      group-id: chat-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.example.zikzak.chatservice.event
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.example.zikzak.chatservice.event.MessageEvent
+
+    listener:
+      ack-mode: record
+
 security:
   jwt:
     secret: ${JWT_SECRET}
+
+app:
+  kafka:
+    topics:
+      message-events: ${MESSAGE_EVENTS_TOPIC:message.events.v1}
