@@ -15,6 +15,9 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+
+
 
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +29,12 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+
+
 
 @SpringBootTest(properties = {
         "spring.kafka.listener.auto-startup=true"
@@ -56,6 +65,9 @@ class MessageEventConsumerIntegrationTest
 
     @MockBean
     private ChatMessageEventHandler eventHandler;
+
+    @SpyBean
+    private MessageEventDltConsumer dltConsumer;
 
     @Test
     void shouldConsumeAndDeserializeMessageEvent() throws Exception {
@@ -160,44 +172,74 @@ class MessageEventConsumerIntegrationTest
                 )
                         .createConsumer();
 
-        embeddedKafkaBroker.consumeFromAnEmbeddedTopic(
-                consumer,
-                DLT_TOPIC
-        );
+        try {
 
-        kafkaTemplate.send(
-                TOPIC,
-                "88",
-                event
-        ).get(10, TimeUnit.SECONDS);
+            embeddedKafkaBroker.consumeFromAnEmbeddedTopic(
+                    consumer,
+                    DLT_TOPIC
+            );
 
-        verify(
-                eventHandler,
-                timeout(10_000).times(3)
-        )
-                .handle(any(MessageEvent.class));
+            kafkaTemplate.send(
+                    TOPIC,
+                    "88",
+                    event
+            ).get(10, TimeUnit.SECONDS);
 
-        ConsumerRecord<String, MessageEvent> dltRecord =
-                KafkaTestUtils.getSingleRecord(
-                        consumer,
-                        DLT_TOPIC,
-                        java.time.Duration.ofSeconds(10)
-                );
+            verify(
+                    eventHandler,
+                    timeout(10_000).times(3)
+            )
+                    .handle(any(MessageEvent.class));
 
-        assertThat(dltRecord)
-                .isNotNull();
+            ConsumerRecord<String, MessageEvent> dltRecord =
+                    KafkaTestUtils.getSingleRecord(
+                            consumer,
+                            DLT_TOPIC,
+                            java.time.Duration.ofSeconds(10)
+                    );
 
-        assertThat(dltRecord.value().messageId())
-                .isEqualTo(502L);
+            assertThat(dltRecord)
+                    .isNotNull();
 
-        assertThat(dltRecord.value().chatId())
-                .isEqualTo(88L);
+            assertThat(dltRecord.value().messageId())
+                    .isEqualTo(502L);
 
-        assertThat(dltRecord.value().content())
-                .isEqualTo(
-                        "Message that will fail"
-                );
+            assertThat(dltRecord.value().chatId())
+                    .isEqualTo(88L);
 
-        consumer.close();
+            assertThat(dltRecord.value().content())
+                    .isEqualTo("Message that will fail");
+
+            ArgumentCaptor<MessageEvent> dltEventCaptor =
+                    ArgumentCaptor.forClass(MessageEvent.class);
+
+            verify(
+                    dltConsumer,
+                    timeout(10_000)
+            )
+                    .consume(
+                            dltEventCaptor.capture(),
+                            anyString(),
+                            anyInt(),
+                            anyLong(),
+                            nullable(String.class),
+                            nullable(String.class)
+                    );
+
+            MessageEvent dltEvent =
+                    dltEventCaptor.getValue();
+
+            assertThat(dltEvent.messageId())
+                    .isEqualTo(502L);
+
+            assertThat(dltEvent.chatId())
+                    .isEqualTo(88L);
+
+            assertThat(dltEvent.content())
+                    .isEqualTo("Message that will fail");
+
+        } finally {
+            consumer.close();
+        }
     }
 }
