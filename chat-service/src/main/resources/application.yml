@@ -37,6 +37,10 @@ spring:
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.example.zikzak.chatservice.event.MessageEvent
 
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
     listener:
       ack-mode: record
 
