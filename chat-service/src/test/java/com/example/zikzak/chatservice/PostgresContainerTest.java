@@ -1,25 +1,25 @@
 package com.example.zikzak.chatservice;
 
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.springframework.test.context.ActiveProfiles;
 
-@Testcontainers
 @ActiveProfiles("test")
 public abstract class PostgresContainerTest {
 
     private static final String TEST_JWT_SECRET =
             "0123456789012345678901234567890123456789012345678901234567890123";
 
-    @Container
     static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>("postgres:17")
                     .withDatabaseName("zikzak_chats_test")
                     .withUsername("postgres")
                     .withPassword("postgres");
+
+    static {
+        POSTGRES.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(
@@ -29,14 +29,17 @@ public abstract class PostgresContainerTest {
                 "spring.datasource.url",
                 POSTGRES::getJdbcUrl
         );
+
         registry.add(
                 "spring.datasource.username",
                 POSTGRES::getUsername
         );
+
         registry.add(
                 "spring.datasource.password",
                 POSTGRES::getPassword
         );
+
         registry.add(
                 "security.jwt.secret",
                 () -> TEST_JWT_SECRET

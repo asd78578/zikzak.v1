@@ -5,19 +5,29 @@ import com.example.zikzak.chatservice.chat.ChatRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+
 @Service
 public class ChatMessageEventHandler {
 
     private final ChatRepository chatRepository;
+    private final ProcessedMessageEventRepository processedMessageEventRepository;
 
     public ChatMessageEventHandler(
-            ChatRepository chatRepository
+            ChatRepository chatRepository,
+            ProcessedMessageEventRepository processedMessageEventRepository
     ) {
         this.chatRepository = chatRepository;
+        this.processedMessageEventRepository = processedMessageEventRepository;
     }
 
     @Transactional
     public void handle(MessageEvent event) {
+
+        if (processedMessageEventRepository.existsById(event.eventId())) {
+            return;
+        }
+
         Chat chat = chatRepository.findById(event.chatId())
                 .orElseThrow(
                         () -> new IllegalStateException(
@@ -46,5 +56,12 @@ public class ChatMessageEventHandler {
                             event.messageId()
                     );
         }
+
+        processedMessageEventRepository.save(
+                new ProcessedMessageEvent(
+                        event.eventId(),
+                        OffsetDateTime.now()
+                )
+        );
     }
 }

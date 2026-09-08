@@ -5,9 +5,9 @@ import com.example.zikzak.chatservice.chat.ChatRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -15,6 +15,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +29,9 @@ class ChatMessageEventHandlerTest {
     @Mock
     private ChatRepository chatRepository;
 
+    @Mock
+    private ProcessedMessageEventRepository processedMessageEventRepository;
+
     private Chat chat;
     private ChatMessageEventHandler handler;
 
@@ -34,26 +39,25 @@ class ChatMessageEventHandlerTest {
     void setUp() {
         chat = new Chat("100:200");
 
-        ReflectionTestUtils.setField(
-                chat,
-                "id",
-                10L
+        handler = new ChatMessageEventHandler(
+                chatRepository,
+                processedMessageEventRepository
         );
-
-        handler = new ChatMessageEventHandler(chatRepository);
     }
 
     @Test
     void shouldApplySentMessage() {
-        when(chatRepository.findById(10L))
-                .thenReturn(Optional.of(chat));
-
-        handler.handle(event(
+        MessageEvent event = event(
                 MessageEventType.MESSAGE_SENT,
                 501L,
                 "Hello Kafka",
                 "SENT"
-        ));
+        );
+
+        when(chatRepository.findById(10L))
+                .thenReturn(Optional.of(chat));
+
+        handler.handle(event);
 
         assertThat(chat.getLastMessageId()).isEqualTo(501L);
         assertThat(chat.getLastMessagePreview())
@@ -62,6 +66,8 @@ class ChatMessageEventHandlerTest {
                 .isEqualTo(EVENT_TIME);
 
         verify(chatRepository).findById(10L);
+        verify(processedMessageEventRepository)
+                .save(any(ProcessedMessageEvent.class));
     }
 
     @Test
@@ -151,6 +157,74 @@ class ChatMessageEventHandlerTest {
                 ))
         ).isInstanceOf(IllegalStateException.class)
                 .hasMessage("Chat with id 10 was not found");
+
+        verify(processedMessageEventRepository, never())
+                .save(any());
+    }
+
+    @Test
+    void shouldSaveProcessedEventAfterSuccessfulHandling() {
+        UUID eventId = UUID.randomUUID();
+
+        MessageEvent event = new MessageEvent(
+                eventId,
+                MessageEventType.MESSAGE_SENT,
+                501L,
+                10L,
+                100L,
+                "Hello Kafka",
+                "SENT",
+                EVENT_TIME
+        );
+
+        when(chatRepository.findById(10L))
+                .thenReturn(Optional.of(chat));
+
+        handler.handle(event);
+
+        ArgumentCaptor<ProcessedMessageEvent> captor =
+                ArgumentCaptor.forClass(ProcessedMessageEvent.class);
+
+        verify(processedMessageEventRepository)
+                .save(captor.capture());
+
+        ProcessedMessageEvent savedEvent = captor.getValue();
+
+        assertThat(savedEvent.getEventId())
+                .isEqualTo(eventId);
+
+        assertThat(savedEvent.getProcessedAt())
+                .isNotNull();
+    }
+
+    @Test
+    void shouldSkipAlreadyProcessedEvent() {
+        UUID eventId = UUID.randomUUID();
+
+        MessageEvent event = new MessageEvent(
+                eventId,
+                MessageEventType.MESSAGE_SENT,
+                501L,
+                10L,
+                100L,
+                "Duplicate message",
+                "SENT",
+                EVENT_TIME
+        );
+
+        when(processedMessageEventRepository.existsById(eventId))
+                .thenReturn(true);
+
+        handler.handle(event);
+
+        verify(chatRepository, never())
+                .findById(any());
+
+        verify(processedMessageEventRepository, never())
+                .save(any());
+
+        assertThat(chat.getLastMessageId()).isNull();
+        assertThat(chat.getLastMessagePreview()).isNull();
     }
 
     private MessageEvent event(
