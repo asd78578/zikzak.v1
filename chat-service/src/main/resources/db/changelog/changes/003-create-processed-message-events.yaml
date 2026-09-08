@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-processed-message-events
+      author: alaudin
+      changes:
+        - createTable:
+            tableName: processed_message_events
+            columns:
+              - column:
+                  name: event_id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: processed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
