@@ -32,6 +32,9 @@ class ChatMessageEventHandlerTest {
     @Mock
     private ProcessedMessageEventRepository processedMessageEventRepository;
 
+    @Mock
+    private KafkaMetrics kafkaMetrics;
+
     private Chat chat;
     private ChatMessageEventHandler handler;
 
@@ -41,7 +44,8 @@ class ChatMessageEventHandlerTest {
 
         handler = new ChatMessageEventHandler(
                 chatRepository,
-                processedMessageEventRepository
+                processedMessageEventRepository,
+                kafkaMetrics
         );
     }
 
@@ -222,6 +226,9 @@ class ChatMessageEventHandlerTest {
 
         verify(processedMessageEventRepository, never())
                 .save(any());
+
+        verify(kafkaMetrics)
+                .incrementDuplicate();
 
         assertThat(chat.getLastMessageId()).isNull();
         assertThat(chat.getLastMessagePreview()).isNull();

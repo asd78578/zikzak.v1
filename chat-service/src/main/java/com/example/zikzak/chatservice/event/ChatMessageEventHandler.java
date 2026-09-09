@@ -12,20 +12,24 @@ public class ChatMessageEventHandler {
 
     private final ChatRepository chatRepository;
     private final ProcessedMessageEventRepository processedMessageEventRepository;
+    private final KafkaMetrics kafkaMetrics;
 
     public ChatMessageEventHandler(
             ChatRepository chatRepository,
-            ProcessedMessageEventRepository processedMessageEventRepository
+            ProcessedMessageEventRepository processedMessageEventRepository,
+            KafkaMetrics kafkaMetrics
     ) {
         this.chatRepository = chatRepository;
         this.processedMessageEventRepository = processedMessageEventRepository;
+        this.kafkaMetrics = kafkaMetrics;
     }
 
     @Transactional
-    public void handle(MessageEvent event) {
+    public MessageEventHandlingResult handle(MessageEvent event) {
 
         if (processedMessageEventRepository.existsById(event.eventId())) {
-            return;
+            kafkaMetrics.incrementDuplicate();
+            return MessageEventHandlingResult.DUPLICATE;
         }
 
         Chat chat = chatRepository.findById(event.chatId())
@@ -63,5 +67,7 @@ public class ChatMessageEventHandler {
                         OffsetDateTime.now()
                 )
         );
+
+        return MessageEventHandlingResult.PROCESSED;
     }
 }
