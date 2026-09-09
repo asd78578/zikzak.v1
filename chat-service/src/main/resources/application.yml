@@ -53,3 +53,17 @@ app:
     topics:
       message-events: ${MESSAGE_EVENTS_TOPIC:message.events.v1}
       message-events-dlt: ${MESSAGE_EVENTS_DLT_TOPIC:message.events.v1.DLT}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: chat-service

@@ -11,6 +11,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class MessageEventDltConsumer {
 
+    public MessageEventDltConsumer(KafkaMetrics kafkaMetrics) {
+        this.kafkaMetrics = kafkaMetrics;
+    }
+
+    private final KafkaMetrics kafkaMetrics;
+
     private static final Logger log =
             LoggerFactory.getLogger(MessageEventDltConsumer.class);
 
@@ -32,6 +38,7 @@ public class MessageEventDltConsumer {
                     required = false
             ) String exceptionMessage
     ) {
+        kafkaMetrics.incrementDlt();
 
         log.error(
                 "Message received from DLT: eventId={}, messageId={}, chatId={}, topic={}, partition={}, offset={}, exceptionClass={}, exceptionMessage={}",

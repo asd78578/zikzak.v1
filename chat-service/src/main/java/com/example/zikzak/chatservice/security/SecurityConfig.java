@@ -41,7 +41,12 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(authorize ->
-                        authorize.anyRequest().authenticated()
+                        authorize
+                                .requestMatchers(
+                                        "/actuator/health",
+                                        "/actuator/prometheus"
+                                ).permitAll()
+                                .anyRequest().authenticated()
                 )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
