@@ -67,3 +67,7 @@ management:
   metrics:
     tags:
       application: chat-service
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [correlationId=%X{correlationId:-none}] [%thread] %logger{36} - %msg%n"

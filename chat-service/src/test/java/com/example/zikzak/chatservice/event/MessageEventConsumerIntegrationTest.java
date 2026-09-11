@@ -223,7 +223,8 @@ class MessageEventConsumerIntegrationTest
                             anyInt(),
                             anyLong(),
                             nullable(String.class),
-                            nullable(String.class)
+                            nullable(String.class),
+                            nullable(byte[].class)
                     );
 
             MessageEvent dltEvent =
