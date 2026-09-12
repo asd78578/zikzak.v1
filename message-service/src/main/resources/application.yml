@@ -25,6 +25,7 @@ spring:
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -45,3 +46,16 @@ app:
   kafka:
     topics:
       message-events: ${MESSAGE_EVENTS_TOPIC:message.events.v1}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [correlationId=%X{correlationId:-none}] [traceId=%X{traceId:-none}] [spanId=%X{spanId:-none}] [%thread] %logger{36} - %msg%n"

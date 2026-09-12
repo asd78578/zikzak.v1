@@ -68,6 +68,14 @@ management:
     tags:
       application: chat-service
 
+  tracing:
+    sampling:
+      probability: 1.0
+
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [correlationId=%X{correlationId:-none}] [%thread] %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [correlationId=%X{correlationId:-none}] [traceId=%X{traceId:-none}] [spanId=%X{spanId:-none}] [%thread] %logger{36} - %msg%n"
